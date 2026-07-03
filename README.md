@@ -31,15 +31,6 @@ Prerequisites:
 - `network_mode: host` — Roon discovery and RAAT rely on host networking; bridge mode is not covered here
 - Writable host paths for `/data` and `/backup`, and a path for `/music` (read-only is recommended)
 
-1. Create a `version.env` file:
-
-```env
-ROON_IMAGE=tbiegacz/roon-core
-ROON_VERSION=2.67.1661
-```
-
-Replace `ROON_VERSION` with the tag you want from [Docker Hub](https://hub.docker.com/r/tbiegacz/roon-core/tags).
-
 1. Prepare the data directory (once):
 
 ```bash
@@ -54,7 +45,7 @@ The container runs as UID **1010**. Roon must be able to read and write `/data`.
 ```yaml
 services:
   core:
-    image: ${ROON_IMAGE}:${ROON_VERSION}
+    image: tbiegacz/roon-core:2.67.1661
     restart: unless-stopped
     network_mode: host
     volumes:
@@ -68,14 +59,18 @@ services:
       - ROON_DEFAULT_MUSIC_FOLDER_WATCH_PATH=/music
 ```
 
-Adjust host paths and `TZ` for your environment. Mount points on the host can differ; what matters is the container paths (`/data`, `/backup`, `/music`).
+Adjust host paths, `TZ`, and the image tag for your environment. Pick the tag from [Docker Hub](https://hub.docker.com/r/tbiegacz/roon-core/tags). Mount points on the host can differ; what matters is the container paths (`/data`, `/backup`, `/music`).
 
 1. Start the core:
 
 ```bash
-docker compose --env-file version.env pull
-docker compose --env-file version.env up -d
-docker compose --env-file version.env logs -f
+docker compose up -d
+```
+
+To follow logs:
+
+```bash
+docker compose logs -f
 ```
 
 1. Open the Roon desktop or mobile app on the same LAN and connect to the new core. On first run, point the library watch folder at `/music` if it is not picked up automatically.
@@ -107,13 +102,14 @@ Permissions cheat sheet
 
 ### Upgrading Roon
 
-1. Set `ROON_VERSION` in `version.env` to the new tag.
-2. Pull and recreate:
+1. Update the image tag in `docker-compose.yml` to the new version from [Docker Hub](https://hub.docker.com/r/tbiegacz/roon-core/tags).
+2. Recreate the container:
 
 ```bash
-docker compose --env-file version.env pull
-docker compose --env-file version.env up -d
+docker compose up -d
 ```
+
+Compose pulls the image automatically if that tag is not present on the host yet.
 
 
 
@@ -241,7 +237,7 @@ sudo ufw reload
 | Backups fail, music works       | CIFS mount not mapped to 1010        | fstab `uid=1010,gid=1010`; remount after changes                                   |
 | Remotes cannot find core        | Network isolation                    | Compose must use `network_mode: host`; check UDP 9003 and TCP 9330–9339 on LAN     |
 | Empty or wrong library          | Watch path mismatch                  | Set `ROON_DEFAULT_MUSIC_FOLDER_WATCH_PATH=/music` or add `/music` in Roon settings |
-| Upgrade did not change version  | Old container still running          | `docker compose pull` then `up -d`; confirm tag in `version.env`                   |
+| Upgrade did not change version  | Old container still running          | Run `docker compose up -d`; confirm tag in `docker-compose.yml`                    |
 
 
 
